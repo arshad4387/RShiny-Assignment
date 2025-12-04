@@ -6,7 +6,7 @@ library(DT)
 
 
 # ----------------------- Load data -----------------------
-dig <- read.csv('/Users/arshad/Downloads/DIG-1.csv')
+dig <- read.csv('DIG.csv')
 
 # Keep relevant variables + NEW ONES
 dig_df <- dig %>% 
