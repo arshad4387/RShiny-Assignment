@@ -3,7 +3,7 @@ library(tidyverse)
 library(shinydashboard)
 library(shinycssloaders)
 library(DT)
-
+library(plotly)
 
 # ----------------------- Load data -----------------------
 dig <- read.csv('DIG.csv')
@@ -53,9 +53,7 @@ dig_df <- dig_df %>%
 #                        UI
 # ==========================================================
 ui <- navbarPage("DIG Trial Insights",
-                 # --------------------------------------------------------
-                 # PAGE 1: OVERVIEW
-                 # --------------------------------------------------------
+                 
                  tabPanel("Trial Overview",
                           fluidPage(
                             h2("Trial Summary"),
@@ -73,7 +71,6 @@ ui <- navbarPage("DIG Trial Insights",
                                                               max(dig_df$"Age", na.rm = TRUE))))
                             ),
                             
-                            # Summary boxes
                             fluidRow(
                               valueBoxOutput("vTotal"),
                               valueBoxOutput("vTreatment"),
@@ -85,7 +82,6 @@ ui <- navbarPage("DIG Trial Insights",
                               valueBoxOutput("vDeaths")
                             ),  
                             
-                            # Plots
                             fluidRow(
                               column(4, plotOutput("treatmentPie")),
                               column(4, plotOutput("ageHist")),
@@ -93,8 +89,9 @@ ui <- navbarPage("DIG Trial Insights",
                             )
                           )
                  ),
+                 
                  # --------------------------------------------------------
-                 # PAGE 2: HOSPITALISATION
+                 # PAGE 2
                  # --------------------------------------------------------
                  tabPanel("Hospitalisations",
                           fluidPage(
@@ -119,6 +116,7 @@ ui <- navbarPage("DIG Trial Insights",
                                                     choices = c("All", "Alive", "Death"))),
                               column(4, actionButton("applyHospFilter","Apply Filters"))
                             ),
+                            
                             tags$p("Please select the filters and click Apply Filters", 
                                    style = "font-weight: bold; color:red; margin-top: 10px;"),
                             br(),
@@ -129,46 +127,116 @@ ui <- navbarPage("DIG Trial Insights",
                  ),
                  
                  # --------------------------------------------------------
-                 # PAGE 3: CLINICAL CHARACTERISTICS (NEW!)
+                 # PAGE 3
                  # --------------------------------------------------------
                  tabPanel("Clinical Characteristics",
                           fluidPage(
                             h2("Clinical Profile of Patients"),
                             
-                            # ------------------- First Row: Key Clinical Value Boxes -------------------
                             fluidRow(
                               valueBoxOutput("cEF"),
                               valueBoxOutput("cHR"),
                               valueBoxOutput("cNYHA")
                             ),
                             
-                            # ------------------- Second Row: Additional Clinical Value Boxes -------------------
                             fluidRow(
                               valueBoxOutput("cCHFdur"),
                               valueBoxOutput("cHTN"),
                               valueBoxOutput("cDM")
                             ),
                             
-                            # ------------------- Third Row: More Value Boxes -------------------
                             fluidRow(
                               valueBoxOutput("cDigUse"),
                               valueBoxOutput("cCreat"),
                               valueBoxOutput("cBMI")
                             ),
                             
-                            br(), # Add spacing before plots
+                            br(),
                             
-                            # ------------------- Fifth Row: Plots -------------------
                             fluidRow(
                               column(6, plotOutput("efHist")),
                               column(6, plotOutput("hrHist"))
                             ),
                             
-                            # ------------------- Sixth Row: Plots -------------------
                             fluidRow(
                               column(6, plotOutput("nyhaBar")),
                               column(6, plotOutput("chestxHist"))
                             )
+                          )
+                 ),
+                 
+                 # --------------------------------------------------------
+                 # PAGE 4: Cohort
+                 # --------------------------------------------------------
+                 tabPanel("Cohort / Baseline",
+                          sidebarLayout(
+                            sidebarPanel(
+                              sliderInput("ageRange", "Age range (years):",
+                                          min = floor(min(dig$AGE, na.rm = TRUE)),
+                                          max = ceiling(max(dig$AGE, na.rm = TRUE)),
+                                          value = c(min(dig$AGE, na.rm=TRUE), max(dig$AGE, na.rm=TRUE))),
+                              
+                              checkboxGroupInput("treatmentChoice", "Treatment arm:",
+                                                 choices = levels(as.factor(dig$TRTMT)),
+                                                 selected = levels(as.factor(dig$TRTMT))),
+                              
+                              selectInput("sexChoice", "Sex:", choices = c("All","Male","Female")),
+                              width = 3
+                            ),
+                            
+                            mainPanel(
+                              fluidRow(
+                                column(6, withSpinner(plotlyOutput("cohortAgeHist"))),
+                                column(6, withSpinner(plotlyOutput("bmiBox")))
+                              ),
+                              fluidRow(
+                                column(6, withSpinner(plotlyOutput("efByTreatment"))),
+                                column(6, withSpinner(plotlyOutput("nyhaBar2")))
+                              )
+                            )
+                          )
+                 ),
+                 
+                 # --------------------------------------------------------
+                 # PAGE 5: Exploration
+                 # --------------------------------------------------------
+                 tabPanel("Exploration",
+                          sidebarLayout(
+                            sidebarPanel(
+                              selectInput("xvar","X variable:",
+                                          choices = c("AGE","BMI","EJF_PER","CREAT","KLEVEL"),
+                                          selected = "AGE"),
+                              
+                              selectInput("yvar","Y variable:",
+                                          choices = c("NHOSP","HOSPDAYS","DEATHDAY"),
+                                          selected = "NHOSP"),
+                              
+                              selectInput("colorBy","Color by:",
+                                          choices = c("TRTMT","SEX","FUNCTCLS"),
+                                          selected = "TRTMT"),
+                              
+                              checkboxInput("addSmooth","Add smoothing (geom_smooth)", value = TRUE),
+                              width = 3
+                            ),
+                            
+                            mainPanel(
+                              withSpinner(plotlyOutput("scatterPlot")),
+                              br(),
+                              withSpinner(DTOutput("scatterSubset"))
+                            )
+                          )
+                 ),
+                 
+                 # --------------------------------------------------------
+                 # PAGE 6: Download
+                 # --------------------------------------------------------
+                 tabPanel("Download & Repro",
+                          fluidPage(
+                            h4("Download filtered data"),
+                            downloadButton("downloadData", "Download CSV (current filters)"),
+                            br(), br(),
+                            h4("Session Info"),
+                            verbatimTextOutput("sessionInfo")
                           )
                  )
 )
@@ -178,34 +246,36 @@ ui <- navbarPage("DIG Trial Insights",
 # ==========================================================
 server <- function(input, output) {
   
-  # ------------ Overview Filter ------------
+  # ---------------- Overview Filters ----------------
   filtered_overview <- reactive({
     df <- dig_df
     if(input$overview_treatment != "All")
       df <- df %>% filter(Treatment == input$overview_treatment)
+    
     if(input$overview_gender != "All")
       df <- df %>% filter(Gender == input$overview_gender)
+    
     df %>% filter(Age >= input$overview_age[1],
                   Age <= input$overview_age[2])
   })
   
-  # ------------ Overview Value Boxes ------------
+  # Value Boxes
   output$vTotal <- renderValueBox({
     valueBox(nrow(filtered_overview()), "Total Patients", color = "blue")
   })
   
   output$vTreatment <- renderValueBox({
-    valueBox(sum(filtered_overview()$"Treatment" == "Treatment"),
+    valueBox(sum(filtered_overview()$Treatment == "Treatment"),
              "On Digoxin", color = "green")
   })
   
   output$vPlacebo <- renderValueBox({
-    valueBox(sum(filtered_overview()$"Treatment" == "Placebo"),
+    valueBox(sum(filtered_overview()$Treatment == "Placebo"),
              "On Placebo", color = "yellow")
   })
   
   output$vAge <- renderValueBox({
-    valueBox(round(mean(filtered_overview()$"Age", na.rm=TRUE),1),
+    valueBox(round(mean(filtered_overview()$Age, na.rm=TRUE),1),
              "Mean Age", color="purple")
   })
   
@@ -220,7 +290,7 @@ server <- function(input, output) {
   })
   
   
-  # ------------ Overview Plots ------------
+  # ---------------- Overview plots ----------------
   output$treatmentPie <- renderPlot({
     ggplot(filtered_overview(), aes(x="", fill=Treatment)) +
       geom_bar(width=1) +
@@ -233,17 +303,17 @@ server <- function(input, output) {
     ggplot(filtered_overview(), aes(Age)) +
       geom_histogram(color="black", fill="skyblue", bins=20) +
       theme_minimal() +
-      labs(title="Age Distribution", x="Age", y="Number of patients")
+      labs(title="Age Distribution")
   })
   
   output$genderBar <- renderPlot({
     ggplot(filtered_overview(), aes(Gender, fill=Gender)) +
       geom_bar() +
       theme_minimal() +
-      labs(title="Gender Proportion", fill = "Gender", x = "Gender", y="Number of patients")
+      labs(title="Gender Proportion")
   })
   
-  # ------------ Page 2: Patient Data ------------
+  # ---------------- Page 2: Hospital Filters ----------------
   hosp_filtered <- eventReactive(input$applyHospFilter, {
     df <- dig_df %>%
       filter(hosp_days >= input$minDays) %>%
@@ -261,7 +331,6 @@ server <- function(input, output) {
     df
   }, ignoreNULL = FALSE)
   
-  
   output$hospTable <- renderDT({
     hosp_filtered() %>%
       select(
@@ -277,10 +346,9 @@ server <- function(input, output) {
   }, options = list(pageLength=10, scrollX = TRUE))
   
   # ======================================================
-  #      PAGE 3: NEW Clinical Characteristics
+  #      PAGE 3: Clinical Characteristics
   # ======================================================
   
-  # Value boxes
   output$cEF <- renderValueBox({
     valueBox(round(mean(dig_df$ef, na.rm=T),1), "Mean EF", color="red")
   })
@@ -326,44 +394,107 @@ server <- function(input, output) {
              "Mean BMI", color="blue")
   })
   
-  # Plots
   output$efHist <- renderPlot({
     ggplot(dig_df, aes(ef)) +
       geom_histogram(fill = "darkred", color = "black", bins = 20) +
       theme_minimal() +
-      labs(title = "Ejection Fraction Distribution",
-           x = "Ejection Fraction (%)",
-           y = "Number of Patients")
+      labs(title = "Ejection Fraction Distribution")
   })
   
   output$hrHist <- renderPlot({
     ggplot(dig_df, aes(heart_rate)) +
       geom_histogram(fill = "orange", color = "black", bins = 20) +
-      theme_minimal() +
-      labs(title = "Heart Rate Distribution",
-           x = "Heart Rate (bpm)",
-           y = "Number of Patients")
+      theme_minimal()
   })
   
   output$nyhaBar <- renderPlot({
     ggplot(dig_df, aes(nyha, fill = nyha)) +
       geom_bar() +
-      theme_minimal() +
-      labs(title = "NYHA Functional Class Distribution",
-           x = "NYHA Class",
-           y = "Number of Patients",
-           fill = "NYHA Class")
+      theme_minimal()
   })
   
   output$chestxHist <- renderPlot({
     ggplot(dig_df, aes(chestx)) +
       geom_histogram(fill = "steelblue", color = "black", bins = 20) +
-      theme_minimal() +
-      labs(title = "Chest X-Ray CTR Distribution",
-           x = "Cardiothoracic Ratio (CTR)",
-           y = "Number of Patients")
+      theme_minimal()
   })
   
+  # ======================================================
+  #    PAGE 4 : Cohort — Missing filtered_base() FIXED
+  # ======================================================
+  filtered_base <- reactive({
+    df <- dig
+    
+    df <- df %>% filter(AGE >= input$ageRange[1],
+                        AGE <= input$ageRange[2])
+    
+    df <- df %>% filter(TRTMT %in% input$treatmentChoice)
+    
+    if (input$sexChoice != "All")
+      df <- df %>% filter(SEX == input$sexChoice)
+    
+    df
+  })
+  
+  output$cohortAgeHist <- renderPlotly({
+    p <- ggplot(filtered_base(), aes(x=AGE, fill=TRTMT)) + 
+      geom_histogram(position="stack", bins=30) +
+      labs(title="Age distribution by arm") +
+      theme_minimal()
+    ggplotly(p)
+  })
+  
+  output$bmiBox <- renderPlotly({
+    p <- ggplot(filtered_base(), aes(x=TRTMT, y=BMI)) +
+      geom_boxplot() +
+      labs(title="BMI by arm") 
+    ggplotly(p)
+  })
+  
+  output$efByTreatment <- renderPlotly({
+    p <- ggplot(filtered_base(), aes(x=TRTMT, y=EJF_PER)) +
+      geom_jitter(width=0.2, alpha=0.6) +
+      stat_summary(fun=mean, geom="point", shape=23, size=3, fill="white") +
+      labs(title="Ejection fraction by arm")
+    ggplotly(p)
+  })
+  
+  output$nyhaBar2 <- renderPlotly({
+    tb <- filtered_base() %>% count(FUNCTCLS, TRTMT)
+    p <- ggplot(tb, aes(x=FUNCTCLS, y=n, fill=TRTMT)) +
+      geom_bar(stat="identity", position="dodge") +
+      labs(title="NYHA Class by arm")
+    ggplotly(p)
+  })
+  
+  
+  # ---------------- Scatter Plot ----------------
+  output$scatterPlot <- renderPlotly({
+    df <- dig %>% filter(!is.na(.data[[input$xvar]]),
+                         !is.na(.data[[input$yvar]]))
+    
+    p <- ggplot(df, aes_string(x=input$xvar, y=input$yvar, color=input$colorBy)) +
+      geom_point(alpha=0.6) +
+      theme_minimal() +
+      labs(title = paste(input$yvar, "vs", input$xvar))
+    
+    if(input$addSmooth)
+      p <- p + geom_smooth(method="loess", se=FALSE)
+    
+    ggplotly(p)
+  })
+  
+  output$scatterSubset <- renderDT({
+    df <- dig %>% select(ID, TRTMT, AGE, SEX, all_of(input$xvar), all_of(input$yvar), all_of(input$colorBy))
+    datatable(df, options=list(pageLength=8, scrollX=TRUE))
+  })
+  
+  output$downloadData <- downloadHandler(
+    filename=function() paste0("DIG_filtered_", Sys.Date(), ".csv"),
+    content=function(file) readr::write_csv(filtered_base(), file)
+  )
+  
+  output$sessionInfo <- renderPrint({ sessionInfo() })
 }
 
 shinyApp(ui, server)
