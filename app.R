@@ -25,6 +25,7 @@ dig_df <- dig %>%
     nyha = FUNCTCLS,
     hypertension = HYPERTEN,
     cvd = CVD,
+    diabetes = DIABETES,
     whf = WHF,
     digoxin = DIGUSE,
     hosp_hist = HOSP,
@@ -134,18 +135,36 @@ ui <- navbarPage("DIG Trial Insights",
                           fluidPage(
                             h2("Clinical Profile of Patients"),
                             
+                            # ------------------- First Row: Key Clinical Value Boxes -------------------
                             fluidRow(
                               valueBoxOutput("cEF"),
                               valueBoxOutput("cHR"),
-                              valueBoxOutput("cNYHA"),
-                              valueBoxOutput("cCHFdur")
+                              valueBoxOutput("cNYHA")
                             ),
                             
+                            # ------------------- Second Row: Additional Clinical Value Boxes -------------------
+                            fluidRow(
+                              valueBoxOutput("cCHFdur"),
+                              valueBoxOutput("cHTN"),
+                              valueBoxOutput("cDM")
+                            ),
+                            
+                            # ------------------- Third Row: More Value Boxes -------------------
+                            fluidRow(
+                              valueBoxOutput("cDigUse"),
+                              valueBoxOutput("cCreat"),
+                              valueBoxOutput("cBMI")
+                            ),
+                            
+                            br(), # Add spacing before plots
+                            
+                            # ------------------- Fifth Row: Plots -------------------
                             fluidRow(
                               column(6, plotOutput("efHist")),
                               column(6, plotOutput("hrHist"))
                             ),
                             
+                            # ------------------- Sixth Row: Plots -------------------
                             fluidRow(
                               column(6, plotOutput("nyhaBar")),
                               column(6, plotOutput("chestxHist"))
@@ -272,8 +291,9 @@ server <- function(input, output) {
   })
   
   output$cNYHA <- renderValueBox({
-    valueBox(round(mean(dig_df$nyha >= 3, na.rm=T) * 100,1),
-             "% NYHA III–IV", color="navy")
+    nyha_num <- as.numeric(as.character(dig_df$nyha))
+    perc <- mean(nyha_num >= 3, na.rm = TRUE) * 100
+    valueBox(round(perc,1), "% NYHA III–IV", color="navy")
   })
   
   output$cCHFdur <- renderValueBox({
@@ -281,33 +301,67 @@ server <- function(input, output) {
              "Mean CHF Duration (months)", color="olive")
   })
   
+  output$cHTN <- renderValueBox({
+    perc <- mean(dig_df$hypertension == "Yes", na.rm = TRUE) * 100
+    valueBox(round(perc,1), "% with Hypertension", color = "red")
+  })
+  
+  output$cDM <- renderValueBox({
+    perc <- mean(dig_df$diabetes == 1, na.rm = TRUE) * 100
+    valueBox(round(perc,1), "% with Diabetes", color = "orange")
+  })
+  
+  output$cDigUse <- renderValueBox({
+    perc <- mean(dig_df$digoxin == "Yes", na.rm = TRUE) * 100
+    valueBox(round(perc,1), "% Using Digoxin (past week)", color = "green")
+  })
+  
+  output$cCreat <- renderValueBox({
+    med <- median(dig_df$creatinine, na.rm = TRUE)
+    valueBox(round(med,2), "Median Creatinine (mg/dL)", color = "purple")
+  })
+  
+  output$cBMI <- renderValueBox({
+    valueBox(round(mean(dig_df$bmi, na.rm = TRUE),1),
+             "Mean BMI", color="blue")
+  })
+  
   # Plots
   output$efHist <- renderPlot({
     ggplot(dig_df, aes(ef)) +
-      geom_histogram(fill="darkred", color="black", bins=20) +
+      geom_histogram(fill = "darkred", color = "black", bins = 20) +
       theme_minimal() +
-      labs(title="Ejection Fraction Distribution", x="EF (%)", y="Count")
+      labs(title = "Ejection Fraction Distribution",
+           x = "Ejection Fraction (%)",
+           y = "Number of Patients")
   })
   
   output$hrHist <- renderPlot({
     ggplot(dig_df, aes(heart_rate)) +
-      geom_histogram(fill="orange", color="black", bins=20) +
+      geom_histogram(fill = "orange", color = "black", bins = 20) +
       theme_minimal() +
-      labs(title="Heart Rate Distribution", x="Heart Rate", y="Count")
+      labs(title = "Heart Rate Distribution",
+           x = "Heart Rate (bpm)",
+           y = "Number of Patients")
   })
   
   output$nyhaBar <- renderPlot({
-    ggplot(dig_df, aes(nyha, fill=nyha)) +
+    ggplot(dig_df, aes(nyha, fill = nyha)) +
       geom_bar() +
       theme_minimal() +
-      labs(title="NYHA Functional Class", x="NYHA Class", y="Count")
+      labs(title = "NYHA Functional Class Distribution",
+           x = "NYHA Class",
+           y = "Number of Patients",
+           fill = "NYHA Class")
   })
   
   output$chestxHist <- renderPlot({
     ggplot(dig_df, aes(chestx)) +
-      geom_histogram(fill="steelblue", color="black", bins=20) +
+      geom_histogram(fill = "steelblue", color = "black", bins = 20) +
       theme_minimal() +
-      labs(title="Chest X-Ray CTR Distribution", x="CTR", y="Count")
+      labs(title = "Chest X-Ray CTR Distribution",
+           x = "Cardiothoracic Ratio (CTR)",
+           y = "Number of Patients")
   })
   
 }
