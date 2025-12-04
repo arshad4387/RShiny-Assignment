@@ -178,6 +178,7 @@ ui <- navbarPage("DIG Trial Insights",
 # ==========================================================
 server <- function(input, output) {
   
+<<<<<<< Updated upstream
   # ------------ Overview Filter ------------
   filtered_overview <- reactive({
     df <- dig_df
@@ -187,6 +188,20 @@ server <- function(input, output) {
       df <- df %>% filter(Gender == input$overview_gender)
     df %>% filter(Age >= input$overview_age[1],
                   Age <= input$overview_age[2])
+=======
+  output$plot1 <- renderPlot({
+    dig_df %>%
+      filter(treatment == input$treatment) %>%
+      filter(gender == input$gender) %>%
+      filter(age >= input$age[1], age <= input$age[2]) %>%
+      ggplot(aes(x = treatment, y = age, fill = treatment)) +
+      geom_violin(alpha = 0.3) +
+      geom_boxplot(width = 0.2, outlier.size = 0) +
+      theme_minimal() +
+      labs(title = "Age Distribution by Treatment Group",
+           x = "Treatment Group",
+           y = "Age")
+>>>>>>> Stashed changes
   })
   
   # ------------ Overview Value Boxes ------------
