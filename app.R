@@ -119,7 +119,7 @@ ui <- navbarPage("DIG Trial Insights",
                               column(4, actionButton("applyHospFilter","Apply Filters"))
                             ),
                             tags$p("Please select the filters and click Apply Filters", 
-                                   style = "font-weight: bold; color:#555; margin-top: 10px;"),
+                                   style = "font-weight: bold; color:red; margin-top: 10px;"),
                             br(),
                             fluidRow(
                               column(12, withSpinner(DTOutput("hospTable")))
