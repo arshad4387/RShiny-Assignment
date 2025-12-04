@@ -324,7 +324,7 @@ server <- function(input, output) {
     count <- sum(filtered_overview()$hf_event, na.rm = TRUE)
     
     shinydashboard::valueBox(
-      subtitle = "HF-Related Events",
+      subtitle = "Worsening Heart Failure",
       value = count,
       color = "purple"
     )
@@ -335,7 +335,7 @@ server <- function(input, output) {
     count <- sum(filtered_overview()$noncv_hosp, na.rm = TRUE)
     
     shinydashboard::valueBox(
-      subtitle = "Non-CV Hospitalisations",
+      subtitle = "Non-Cardio Vascular Hospitalisations",
       value = count,
       color = "teal"
     )
