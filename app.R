@@ -48,13 +48,26 @@ dig_df <- dig_df %>%
     death = ifelse(death == 1, "Death", "Alive")
   )
 
+# Calculating trial outcomes
+dig_df <- dig_df %>%
+  mutate(
+    # Cardiovascular mortality (using CVD diagnosis + death)
+    cv_mortality = ifelse(death == "Death" & cvd == "Yes", 1, 0),
+    
+    # HF-related event (using WHF variable)
+    hf_event = ifelse(whf == "Yes", 1, 0),
+    
+    # Non-cardiovascular hospitalisation 
+    noncv_hosp = ifelse(hosp_hist == "Yes" & cvd == "No", 1, 0)
+  )
+
 
 # ==========================================================
 #                        UI
 # ==========================================================
 ui <- navbarPage("DIG Trial Insights",
                  
-                 tabPanel("Trial Overview",
+                 tabPanel("Trial Outcomes & Overview",
                           fluidPage(
                             h2("Trial Summary"),
                             
@@ -70,7 +83,13 @@ ui <- navbarPage("DIG Trial Insights",
                                                     value = c(min(dig_df$"Age", na.rm = TRUE),
                                                               max(dig_df$"Age", na.rm = TRUE))))
                             ),
-                            
+                            h3("Results", style = "font-weight: bold; color:teal"),
+                            fluidRow(
+                              valueBoxOutput("cvMortalityBox"),
+                              valueBoxOutput("hfEventBox"),
+                              valueBoxOutput("noncvHospBox")
+                            ),
+                            h3("Overview", style = "font-weight: bold; color:teal"),
                             fluidRow(
                               valueBoxOutput("vTotal"),
                               valueBoxOutput("vTreatment"),
@@ -80,7 +99,7 @@ ui <- navbarPage("DIG Trial Insights",
                               valueBoxOutput("vAge"),
                               valueBoxOutput("vHosp"),
                               valueBoxOutput("vDeaths")
-                            ),  
+                            ),
                             
                             fluidRow(
                               column(4, plotOutput("treatmentPie")),
@@ -287,6 +306,39 @@ server <- function(input, output) {
   output$vDeaths <- renderValueBox({
     valueBox(sum(filtered_overview()$death == "Death"),
              "Total Deaths", color="black")
+  })
+  
+  # ---- CARD 1: Cardiovascular Mortality ----
+  output$cvMortalityBox <- shinydashboard::renderValueBox({
+    count <- sum(filtered_overview()$cv_mortality, na.rm = TRUE)
+    
+    shinydashboard::valueBox(
+      subtitle = "Cardiovascular Deaths",
+      value = count,
+      color = "red"
+    )
+  })
+  
+  # ---- CARD 2: HF-related Events ----
+  output$hfEventBox <- shinydashboard::renderValueBox({
+    count <- sum(filtered_overview()$hf_event, na.rm = TRUE)
+    
+    shinydashboard::valueBox(
+      subtitle = "HF-Related Events",
+      value = count,
+      color = "purple"
+    )
+  })
+  
+  # ---- CARD 3: Non-CV Hospitalisations ----
+  output$noncvHospBox <- shinydashboard::renderValueBox({
+    count <- sum(filtered_overview()$noncv_hosp, na.rm = TRUE)
+    
+    shinydashboard::valueBox(
+      subtitle = "Non-CV Hospitalisations",
+      value = count,
+      color = "teal"
+    )
   })
   
   
