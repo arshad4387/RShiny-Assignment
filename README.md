@@ -1,4 +1,4 @@
-##DIG Trial Insights — Interactive Shiny Dashboard
+DIG Trial Insights — Interactive Shiny Dashboard
 
 A comprehensive interactive dashboard built in R Shiny to explore and visualise patient characteristics, clinical outcomes, hospitalisations, and cohort profiles from the Digitalis Investigation Group (DIG) Trial dataset.
 
