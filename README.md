@@ -23,7 +23,6 @@ The app consists of **six fully interactive pages**, each designed for a differe
 
 ---
 
-<<<<<<< HEAD
 ### 2️⃣ Hospitalisations
 
 - Filter patients by:
