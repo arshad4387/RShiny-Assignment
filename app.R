@@ -66,7 +66,12 @@ dig_df <- dig_df %>%
 # ==========================================================
 #                        UI
 # ==========================================================
+
+
+
 ui <- navbarPage("DIG Trial Insights",
+                 
+                 # PAGE 1 - by Arshad and shashank
                  
                  tabPanel("Trial Outcomes & Overview",
                           fluidPage(
@@ -110,9 +115,8 @@ ui <- navbarPage("DIG Trial Insights",
                           )
                  ),
                  
-                 # --------------------------------------------------------
-                 # PAGE 2
-                 # --------------------------------------------------------
+                 # PAGE 2 - by Arshad
+            
                  tabPanel("Hospitalisations",
                           fluidPage(
                             h2("Hospitalisation Overview"),
@@ -146,9 +150,8 @@ ui <- navbarPage("DIG Trial Insights",
                           )
                  ),
                  
-                 # --------------------------------------------------------
-                 # PAGE 3
-                 # --------------------------------------------------------
+                 
+                 # PAGE 3 - By Arshad
                  tabPanel("Clinical Characteristics",
                           fluidPage(
                             h2("Clinical Profile of Patients"),
@@ -184,10 +187,7 @@ ui <- navbarPage("DIG Trial Insights",
                             )
                           )
                  ),
-                 
-                 # --------------------------------------------------------
-                 # PAGE 4: Cohort
-                 # --------------------------------------------------------
+                 # PAGE 4: Cohort - by shasank
                  tabPanel("Cohort / Baseline",
                           sidebarLayout(
                             sidebarPanel(
@@ -217,9 +217,9 @@ ui <- navbarPage("DIG Trial Insights",
                           )
                  ),
                  
-                 # --------------------------------------------------------
-                 # PAGE 5: Exploration
-                 # --------------------------------------------------------
+
+                 # PAGE 5: Exploration - By shasank
+
                  tabPanel("Exploration",
                           sidebarLayout(
                             sidebarPanel(
@@ -247,9 +247,7 @@ ui <- navbarPage("DIG Trial Insights",
                           )
                  ),
                  
-                 # --------------------------------------------------------
-                 # PAGE 6: Download
-                 # --------------------------------------------------------
+                 # PAGE 6: Download by shasank
                  tabPanel("Download & Repro",
                           fluidPage(
                             h4("Download filtered data"),
@@ -261,9 +259,8 @@ ui <- navbarPage("DIG Trial Insights",
                  )
 )
 
-# ==========================================================
+
 #                        SERVER
-# ==========================================================
 server <- function(input, output) {
   
   # ---------------- Overview Filters ----------------
@@ -320,7 +317,7 @@ server <- function(input, output) {
     )
   })
   
-  # ---- CARD 2: HF-related Events ----
+  # CARD 2: HF-related Events 
   output$hfEventBox <- shinydashboard::renderValueBox({
     count <- sum(filtered_overview()$hf_event, na.rm = TRUE)
     
@@ -331,7 +328,7 @@ server <- function(input, output) {
     )
   })
   
-  # ---- CARD 3: Non-CV Hospitalisations ----
+  #CARD 3: Non-CV Hospitalisations
   output$noncvHospBox <- shinydashboard::renderValueBox({
     count <- sum(filtered_overview()$noncv_hosp, na.rm = TRUE)
     
@@ -343,7 +340,7 @@ server <- function(input, output) {
   })
   
   
-  # ---------------- Overview plots ----------------
+  # Overview plots
   output$treatmentPie <- renderPlot({
     ggplot(filtered_overview(), aes(x="", fill=Treatment)) +
       geom_bar(width=1) +
@@ -366,7 +363,7 @@ server <- function(input, output) {
       labs(title="Gender Proportion")
   })
   
-  # ---------------- Page 2: Hospital Filters ----------------
+  # Page 2: Hospital Filters 
   hosp_filtered <- eventReactive(input$applyHospFilter, {
     df <- dig_df %>%
       filter(hosp_days >= input$minDays) %>%
@@ -398,9 +395,8 @@ server <- function(input, output) {
       arrange(desc(`Number of Hospitalisations`))
   }, options = list(pageLength=10, scrollX = TRUE))
   
-  # ======================================================
   #      PAGE 3: Clinical Characteristics
-  # ======================================================
+
   
   output$cEF <- renderValueBox({
     valueBox(round(mean(dig_df$ef, na.rm=T),1), "Mean EF", color="red")
@@ -479,9 +475,8 @@ server <- function(input, output) {
         y = "Number of Patients")
   })
   
-  # ======================================================
+
   #    PAGE 4 : Cohort / Baseline Characteristics
-  # ======================================================
   filtered_base <- reactive({
     df <- dig
     
@@ -529,7 +524,7 @@ server <- function(input, output) {
   })
   
   
-  # ---------------- Scatter Plot ----------------
+  # Scatter Plot 
   output$scatterPlot <- renderPlotly({
     df <- dig %>% filter(!is.na(.data[[input$xvar]]),
                          !is.na(.data[[input$yvar]]))
