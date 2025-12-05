@@ -451,25 +451,32 @@ server <- function(input, output) {
     ggplot(dig_df, aes(ef)) +
       geom_histogram(fill = "darkred", color = "black", bins = 20) +
       theme_minimal() +
-      labs(title = "Ejection Fraction Distribution")
+      labs(title = "Ejection Fraction Distribution",x = "Ejection Fraction (%)",
+           y = "Number of Patients")
   })
   
   output$hrHist <- renderPlot({
     ggplot(dig_df, aes(heart_rate)) +
       geom_histogram(fill = "orange", color = "black", bins = 20) +
-      theme_minimal()
+      theme_minimal() +
+      labs(title = "Heart Rate Distribution",x = "Heart Rate (beats per minute)",
+        y = "Number of Patients")
   })
   
   output$nyhaBar <- renderPlot({
     ggplot(dig_df, aes(nyha, fill = nyha)) +
       geom_bar() +
-      theme_minimal()
+      theme_minimal() +
+      labs(title = "NYHA Class Distribution",x = "NYHA Class",
+        y = "Number of Patients")
   })
   
   output$chestxHist <- renderPlot({
     ggplot(dig_df, aes(chestx)) +
       geom_histogram(fill = "steelblue", color = "black", bins = 20) +
-      theme_minimal()
+      theme_minimal() +
+      labs(title = "Chest X-Ray Score Distribution",x = "Chest X-Ray Score",
+        y = "Number of Patients")
   })
   
   # ======================================================
