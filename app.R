@@ -472,7 +472,7 @@ server <- function(input, output) {
   })
   
   # ======================================================
-  #    PAGE 4 : Cohort — Missing filtered_base() FIXED
+  #    PAGE 4 : Cohort / Baseline Characteristics
   # ======================================================
   filtered_base <- reactive({
     df <- dig
@@ -497,9 +497,19 @@ server <- function(input, output) {
   })
   
   output$bmiBox <- renderPlotly({
-    p <- ggplot(filtered_base(), aes(x=TRTMT, y=BMI)) +
+    # ggplot(dig_df, aes(x = Treatment, y = bmi)) +
+    #   geom_boxplot(fill = "lightblue", color = "black", width = 0.5) +
+    #   theme_minimal(base_size = 14) +
+    #   labs(title = "BMI by Treatment Arm",
+    #        x = "Treatment Arm",
+    #        y = "BMI")
+    
+    
+    
+    p <- ggplot(filtered_base(), aes(x = factor(TRTMT, labels = c("Placebo", "Treatment")), y = BMI)) +
       geom_boxplot() +
-      labs(title="BMI by arm") 
+      labs(title = "BMI by arm", x = "Treatment Arm") +
+      theme_minimal()
     ggplotly(p)
   })
   
