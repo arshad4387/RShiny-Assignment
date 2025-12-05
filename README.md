@@ -84,8 +84,3 @@ The app consists of **six fully interactive pages**, each designed for a differe
 - View full R session information
 
 ---
-
-## 📂 Folder Structure
-=======
-	
->>>>>>> 2d689e9c9a7f8647242d772b03dd7f2d4c666bcb
