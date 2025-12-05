@@ -6,10 +6,10 @@ library(DT)
 library(plotly)
 library(rsconnect)
 
-# ----------------------- Load data -----------------------
+# Load data
 dig <- read.csv('DIG.csv')
 
-# Keep relevant variables + NEW ONES
+# Keep relevant variables
 dig_df <- dig %>% 
   select(
     "Patient ID" = ID,
@@ -35,7 +35,7 @@ dig_df <- dig %>%
     death = DEATH
   )
 
-# ----------------------- Recode -----------------------
+# Recode
 dig_df <- dig_df %>%
   mutate(
     Treatment = ifelse(Treatment == 1, "Treatment", "Placebo"),
@@ -62,12 +62,7 @@ dig_df <- dig_df %>%
     noncv_hosp = ifelse(hosp_hist == "Yes" & cvd == "No", 1, 0)
   )
 
-
-# ==========================================================
-#                        UI
-# ==========================================================
-
-
+# UI
 
 ui <- navbarPage("DIG Trial Insights",
                  
@@ -260,7 +255,7 @@ ui <- navbarPage("DIG Trial Insights",
 )
 
 
-#                        SERVER
+# SERVER
 server <- function(input, output) {
   
   # ---------------- Overview Filters ----------------
