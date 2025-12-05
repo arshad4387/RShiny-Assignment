@@ -4,6 +4,7 @@ library(shinydashboard)
 library(shinycssloaders)
 library(DT)
 library(plotly)
+library(rsconnect)
 
 # ----------------------- Load data -----------------------
 dig <- read.csv('DIG.csv')
