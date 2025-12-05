@@ -537,8 +537,32 @@ server <- function(input, output) {
   })
   
   output$scatterSubset <- renderDT({
-    df <- dig %>% select(ID, TRTMT, AGE, SEX, all_of(input$xvar), all_of(input$yvar), all_of(input$colorBy))
-    datatable(df, options=list(pageLength=8, scrollX=TRUE))
+    
+    df <- dig %>% 
+      select(
+        "Patient ID" = ID,
+        "Treatment" = TRTMT,
+        "Age" = AGE,
+        "Gender" = SEX,
+        all_of(input$xvar),
+        all_of(input$yvar),
+        all_of(input$colorBy)
+      )
+    
+    # Rename the dynamic columns too
+    names(df)[names(df) == input$xvar] <- input$xvar |> 
+      stringr::str_replace_all("_", " ") |>
+      stringr::str_to_title()
+    
+    names(df)[names(df) == input$yvar] <- input$yvar |>
+      stringr::str_replace_all("_", " ") |>
+      stringr::str_to_title()
+    
+    names(df)[names(df) == input$colorBy] <- input$colorBy |>
+      stringr::str_replace_all("_", " ") |>
+      stringr::str_to_title()
+    
+    datatable(df, options = list(pageLength = 8, scrollX = TRUE))
   })
   
   output$downloadData <- downloadHandler(
